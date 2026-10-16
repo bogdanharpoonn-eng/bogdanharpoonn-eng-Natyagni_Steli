@@ -9,6 +9,7 @@ import {
 } from 'react'
 import type { BuildRoomSuccess, MeasurementResidual } from '@/core/geometry'
 import { formatCm } from '@/features/room/labels'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { uk } from '@/i18n/uk'
 
 interface RoomDrawingProps {
@@ -45,7 +46,7 @@ export function RoomDrawing({ success, residuals, className }: RoomDrawingProps)
   const svgRef = useRef<SVGSVGElement>(null)
   const [view, setView] = useState<ViewBox>({ x: 0, y: 0, w: 1000, h: 1000 })
   const drag = useRef<{ x: number; y: number; view: ViewBox } | null>(null)
-  const toleranceMm = 10
+  const toleranceMm = useSettingsStore((s) => s.toleranceMm)
 
   const bounds = useMemo(() => {
     if (!success || success.vertices.length === 0) return null

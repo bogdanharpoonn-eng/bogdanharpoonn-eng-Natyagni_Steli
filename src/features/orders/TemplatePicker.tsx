@@ -25,7 +25,8 @@ export function TemplatePicker({ onPick, onCancel }: TemplatePickerProps) {
           <button
             key={opt.id}
             type="button"
-            className="min-h-touch rounded-md bg-slate-800 px-2 text-sm text-slate-100 ring-1 ring-slate-600"
+            data-testid={`template-${opt.id}`}
+            className="theme-btn-ghost min-h-touch rounded-md px-2 text-sm"
             onClick={() => {
               if (opt.id === 'custom') onPick('custom', customCorners)
               else onPick(opt.id)

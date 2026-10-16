@@ -12,6 +12,10 @@ dist
 dev-dist
 dist-ssr
 coverage
+lighthouse-reports
+test-results
+playwright-report
+blob-report
 *.local
 
 # Editor

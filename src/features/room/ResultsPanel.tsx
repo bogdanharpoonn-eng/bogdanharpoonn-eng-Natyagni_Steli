@@ -55,7 +55,7 @@ export function ResultsPanel({ result, sidesReady }: ResultsPanelProps) {
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className="text-slate-400">{uk.roomArea}</dt>
-          <dd className="text-lg font-semibold text-slate-50">
+          <dd className="text-lg font-semibold" data-testid="room-area">
             {result.areaM2.toFixed(2)} {uk.unitM2}
           </dd>
         </div>

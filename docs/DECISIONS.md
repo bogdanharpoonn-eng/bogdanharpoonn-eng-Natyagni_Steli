@@ -64,3 +64,14 @@
 | D033 | Web Share API з files; fallback — download | Telegram/Viber на мобільних; десктоп без share |
 | D034 | JSON envelope `zamir-order` + імпорт | Резервна копія й майбутня передача на виробництво |
 | D035 | Мінімальний company profile у localStorage | PDF-шапка зараз; повний екран налаштувань — етап 7 |
+
+## 2026-10-16 — Етап 7: налаштування / тема / e2e
+
+| ID | Рішення | Чому |
+| --- | --- | --- |
+| D036 | `settingsStore` (тема, допуск, одиниці, профіль) у localStorage | Єдине місце налаштувань; міграція з `zamir-company-profile` |
+| D037 | CSS-змінні `.theme-*` + `html.dark`/`html.light` | Темна/світла тема без переписування всіх екранів на `dark:` |
+| D038 | Playwright e2e основного сценарію на preview | DoD: прямокутник ≤ 60 с у реальному браузері |
+| D039 | Lighthouse Performance ≥ 0.9 + перевірка manifest/SW у `dist` | У LH 12+ немає категорії PWA; артефакти PWA перевіряємо окремо |
+| D040 | Lazy screens + dynamic `jspdf`/`svg2pdf` + `manualChunks` | Довести Performance з ~0.89 до ≥0.9 на mobile |
+| D041 | Lighthouse CLI через `require.resolve` + відносний `--output-path` | Абсолютний шлях з кирилицею на Windows не писав report.json |

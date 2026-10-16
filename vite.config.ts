@@ -52,6 +52,23 @@ export default defineConfig({
       '@': path.resolve(rootDir, 'src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/svg2pdf')) {
+            return 'pdf'
+          }
+          if (id.includes('node_modules/dexie')) {
+            return 'dexie'
+          }
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+            return 'react'
+          }
+        },
+      },
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.{test,spec}.{ts,tsx}'],

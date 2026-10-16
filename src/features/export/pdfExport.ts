@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf'
-import { svg2pdf } from 'svg2pdf.js'
 import type { Order, Room } from '@/data'
 import { summarizeRoom } from '@/features/room/roomSummary'
 import { formatCm } from '@/features/room/labels'
@@ -21,6 +19,10 @@ export async function buildOrderPdf(
   order: Order,
   profile: CompanyProfile = loadCompanyProfile(),
 ): Promise<Blob> {
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([
+    import('jspdf'),
+    import('svg2pdf.js'),
+  ])
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   await ensurePdfFont(doc)
 

@@ -63,7 +63,7 @@ export function RoomScreen({ orderId, roomId }: RoomScreenProps) {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-slate-950 text-slate-300">
+      <div className="theme-page flex items-center justify-center theme-muted">
         {uk.roomBooting}
       </div>
     )
@@ -71,9 +71,9 @@ export function RoomScreen({ orderId, roomId }: RoomScreenProps) {
 
   if (loadError || !room || !order) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-center text-red-200">
+      <div className="theme-page flex flex-col items-center justify-center gap-3 px-4 text-center text-red-600 dark:text-red-200">
         <p>{loadError ?? uk.roomBootError}</p>
-        <button type="button" className="min-h-touch text-sky-300" onClick={() => goOrder(orderId)}>
+        <button type="button" className="min-h-touch text-sky-700 dark:text-sky-300" onClick={() => goOrder(orderId)}>
           {uk.commonBack}
         </button>
       </div>
@@ -81,7 +81,7 @@ export function RoomScreen({ orderId, roomId }: RoomScreenProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-950 text-slate-100">
+    <div className="theme-page" data-testid="room-screen">
       <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-3 py-4 pb-10">
         <header className="flex items-center gap-2">
           <button
@@ -89,21 +89,21 @@ export function RoomScreen({ orderId, roomId }: RoomScreenProps) {
             onClick={() => {
               void flushSave().then(() => goOrder(order.id))
             }}
-            className="min-h-touch min-w-touch rounded-md px-2 text-sky-300 ring-1 ring-slate-700"
+            className="theme-btn-ghost min-h-touch min-w-touch rounded-md px-2"
           >
             {uk.commonBack}
           </button>
           <div>
-            <p className="text-sm text-slate-400">{uk.appTitle}</p>
+            <p className="text-sm theme-muted">{uk.appTitle}</p>
             <h1 className="text-2xl font-semibold tracking-tight">{uk.roomTitle}</h1>
           </div>
         </header>
 
         <label className="block">
-          <span className="mb-1 block text-sm text-slate-400">{uk.roomName}</span>
+          <span className="mb-1 block text-sm theme-muted">{uk.roomName}</span>
           <input
             type="text"
-            className="min-h-touch w-full rounded-md border border-slate-600 bg-slate-900 px-3 text-base outline-none ring-sky-500 focus:ring-2"
+            className="theme-input min-h-touch w-full rounded-md px-3 text-base"
             value={room.name}
             onChange={(e) => setRoomName(e.target.value)}
           />
@@ -112,15 +112,16 @@ export function RoomScreen({ orderId, roomId }: RoomScreenProps) {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="min-h-touch rounded-md px-3 text-sm ring-1 ring-slate-600"
+            className="theme-btn-ghost min-h-touch rounded-md px-3 text-sm"
             onClick={() => setShowTemplates((v) => !v)}
+            data-testid="open-templates"
           >
             {uk.templateTitle}
           </button>
-          <label className="flex min-h-touch items-center gap-2 text-sm text-slate-300">
+          <label className="flex min-h-touch items-center gap-2 text-sm">
             <span>{uk.roomCorners}</span>
             <select
-              className="min-h-touch rounded-md border border-slate-600 bg-slate-900 px-2"
+              className="theme-input min-h-touch rounded-md px-2"
               value={room.vertices.length}
               onChange={(e) => setCornerCount(Number(e.target.value))}
             >

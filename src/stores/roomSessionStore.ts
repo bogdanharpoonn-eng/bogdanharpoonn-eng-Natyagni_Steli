@@ -1,8 +1,6 @@
 import { create } from 'zustand'
 import {
   buildRoom,
-  cmToMm,
-  DEFAULT_TOLERANCE_MM,
   suggestMissingDiagonals,
   type BuildRoomResult,
   type BuildRoomSuccess,
@@ -16,8 +14,9 @@ import {
   type Room,
 } from '@/data'
 import { resizeRoomCorners } from '@/features/room/createPolygonRoom'
-import { parseCmInput } from '@/features/room/labels'
+import { parseLengthInput } from '@/features/room/labels'
 import { applyTemplateToRoom, type RoomTemplateId } from '@/features/room/templates'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 function activeRoom(order: Order, roomId: string): Room | undefined {
   return order.rooms.find((r) => r.id === roomId)
@@ -28,6 +27,10 @@ function replaceRoom(order: Order, room: Room): Order {
     ...order,
     rooms: order.rooms.map((r) => (r.id === room.id ? room : r)),
   }
+}
+
+function currentTolerance(): number {
+  return useSettingsStore.getState().toleranceMm
 }
 
 function recompute(
@@ -51,12 +54,12 @@ function recompute(
 export interface RoomSessionState {
   order: Order | null
   roomId: string | null
-  toleranceMm: number
   result: BuildRoomResult | null
   lastSuccess: BuildRoomSuccess | null
   loading: boolean
   loadError: string | null
   openRoom: (orderId: string, roomId: string) => Promise<void>
+  recomputeActive: () => void
   getRoom: () => Room | null
   setRoomName: (name: string) => void
   setCornerCount: (n: number) => void
@@ -71,13 +74,13 @@ export interface RoomSessionState {
 
 function applyRoomUpdate(roomUpdater: (room: Room) => Room): void {
   const state = useRoomSessionStore.getState()
-  const { order, roomId, toleranceMm, lastSuccess } = state
+  const { order, roomId, lastSuccess } = state
   if (!order || !roomId) return
   const room = activeRoom(order, roomId)
   if (!room) return
   const nextOrder = replaceRoom(order, roomUpdater(room))
   const nextRoom = activeRoom(nextOrder, roomId)!
-  const computed = recompute(nextRoom, toleranceMm, lastSuccess)
+  const computed = recompute(nextRoom, currentTolerance(), lastSuccess)
   getOrderAutosave().schedule(nextOrder)
   useRoomSessionStore.setState({
     order: nextOrder,
@@ -89,7 +92,6 @@ function applyRoomUpdate(roomUpdater: (room: Room) => Room): void {
 export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
   order: null,
   roomId: null,
-  toleranceMm: DEFAULT_TOLERANCE_MM,
   result: null,
   lastSuccess: null,
   loading: false,
@@ -109,7 +111,7 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
         set({ loading: false, loadError: 'Приміщення не знайдено' })
         return
       }
-      const { result, lastSuccess } = recompute(room, get().toleranceMm, null)
+      const { result, lastSuccess } = recompute(room, currentTolerance(), null)
       set({ order, roomId, result, lastSuccess, loading: false })
     } catch (error) {
       set({
@@ -117,6 +119,15 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
         loadError: error instanceof Error ? error.message : 'Помилка завантаження',
       })
     }
+  },
+
+  recomputeActive() {
+    const { order, roomId, lastSuccess } = get()
+    if (!order || !roomId) return
+    const room = activeRoom(order, roomId)
+    if (!room) return
+    const computed = recompute(room, currentTolerance(), lastSuccess)
+    set({ result: computed.result, lastSuccess: computed.lastSuccess })
   },
 
   getRoom() {
@@ -137,9 +148,10 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
     applyRoomUpdate((room) => applyTemplateToRoom(room, template, customCorners))
   },
 
-  setSideCm(from, to, rawCm) {
-    const cm = parseCmInput(rawCm)
-    const length = cm === null ? 0 : cmToMm(cm)
+  setSideCm(from, to, raw) {
+    const unit = useSettingsStore.getState().lengthUnit
+    const lengthMm = parseLengthInput(raw, unit)
+    const length = lengthMm === null ? 0 : lengthMm
     applyRoomUpdate((room) => ({
       ...room,
       sides: room.sides.map((s) =>
@@ -150,23 +162,21 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
     }))
   },
 
-  setDiagonalCm(from, to, rawCm, isControl = false) {
-    const cm = parseCmInput(rawCm)
+  setDiagonalCm(from, to, raw, isControl = false) {
+    const unit = useSettingsStore.getState().lengthUnit
+    const lengthMm = parseLengthInput(raw, unit)
     applyRoomUpdate((room) => {
       const diagonals = [...room.diagonals]
       const idx = diagonals.findIndex(
         (d) =>
           (d.from === from && d.to === to) || (d.from === to && d.to === from),
       )
-      if (cm === null || cm === 0) {
+      if (lengthMm === null || lengthMm === 0) {
         if (idx >= 0) diagonals.splice(idx, 1)
+      } else if (idx >= 0) {
+        diagonals[idx] = { ...diagonals[idx], length: lengthMm }
       } else {
-        const length = cmToMm(cm)
-        if (idx >= 0) {
-          diagonals[idx] = { ...diagonals[idx], length }
-        } else {
-          diagonals.push({ from, to, length, isControl })
-        }
+        diagonals.push({ from, to, length: lengthMm, isControl })
       }
       return { ...room, diagonals }
     })
@@ -207,3 +217,10 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
     await getOrderAutosave().flush()
   },
 }))
+
+// Recompute geometry when tolerance changes while a room is open
+useSettingsStore.subscribe((state, prev) => {
+  if (state.toleranceMm !== prev.toleranceMm) {
+    useRoomSessionStore.getState().recomputeActive()
+  }
+})

@@ -4,6 +4,7 @@ import { summarizeRoom } from '@/features/room/roomSummary'
 import type { RoomTemplateId } from '@/features/room/templates'
 import { useNavStore } from '@/stores/navStore'
 import { useOrdersStore } from '@/stores/ordersStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { ExportActions } from '@/features/export/ExportActions'
 import { TemplatePicker } from './TemplatePicker'
 import { uk } from '@/i18n/uk'
@@ -41,6 +42,7 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
   const flushSave = useOrdersStore((s) => s.flushSave)
   const goOrders = useNavStore((s) => s.goOrders)
   const goRoom = useNavStore((s) => s.goRoom)
+  const toleranceMm = useSettingsStore((s) => s.toleranceMm)
   const [showTemplates, setShowTemplates] = useState(false)
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
 
   if (loading && !current) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-slate-950 text-slate-300">
+      <div className="theme-page flex items-center justify-center theme-muted">
         {uk.ordersLoading}
       </div>
     )
@@ -68,9 +70,9 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
 
   if (error || !current) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-red-200">
+      <div className="theme-page flex flex-col items-center justify-center gap-3 px-4 text-red-600 dark:text-red-200">
         <p>{error ?? uk.orderNotFound}</p>
-        <button type="button" className="min-h-touch px-4 text-sky-300" onClick={goOrders}>
+        <button type="button" className="min-h-touch px-4 text-sky-700 dark:text-sky-300" onClick={goOrders}>
           {uk.commonBack}
         </button>
       </div>
@@ -84,7 +86,7 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-slate-950 text-slate-100">
+    <div className="theme-page" data-testid="order-screen">
       <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-3 py-4 pb-10">
         <header className="flex items-center gap-2">
           <button
@@ -92,44 +94,45 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
             onClick={() => {
               void flushSave().then(goOrders)
             }}
-            className="min-h-touch min-w-touch rounded-md px-2 text-sky-300 ring-1 ring-slate-700"
+            className="theme-btn-ghost min-h-touch min-w-touch rounded-md px-2"
           >
             {uk.commonBack}
           </button>
           <h1 className="text-2xl font-semibold tracking-tight">{uk.orderTitle}</h1>
         </header>
 
-        <section className="space-y-2 rounded-lg border border-slate-700 bg-slate-900 p-3">
-          <h2 className="text-sm font-semibold text-slate-300">{uk.orderClient}</h2>
+        <section className="theme-card space-y-2 rounded-lg p-3">
+          <h2 className="text-sm font-semibold">{uk.orderClient}</h2>
           <input
-            className="min-h-touch w-full rounded-md border border-slate-600 bg-slate-950 px-3"
+            className="theme-input min-h-touch w-full rounded-md px-3"
             placeholder={uk.orderClientName}
             value={current.client.name}
             onChange={(e) => updateClient({ name: e.target.value })}
+            data-testid="client-name"
           />
           <input
-            className="min-h-touch w-full rounded-md border border-slate-600 bg-slate-950 px-3"
+            className="theme-input min-h-touch w-full rounded-md px-3"
             placeholder={uk.orderClientPhone}
             inputMode="tel"
             value={current.client.phone}
             onChange={(e) => updateClient({ phone: e.target.value })}
           />
           <input
-            className="min-h-touch w-full rounded-md border border-slate-600 bg-slate-950 px-3"
+            className="theme-input min-h-touch w-full rounded-md px-3"
             placeholder={uk.orderClientAddress}
             value={current.client.address}
             onChange={(e) => updateClient({ address: e.target.value })}
           />
           <textarea
-            className="min-h-[96px] w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2"
+            className="theme-input min-h-[96px] w-full rounded-md px-3 py-2"
             placeholder={uk.orderNote}
             value={current.note}
             onChange={(e) => updateNote(e.target.value)}
           />
-          <label className="block text-sm text-slate-400">
+          <label className="block text-sm theme-muted">
             {uk.orderStatus}
             <select
-              className="mt-1 min-h-touch w-full rounded-md border border-slate-600 bg-slate-950 px-3 text-slate-100"
+              className="theme-input mt-1 min-h-touch w-full rounded-md px-3"
               value={current.status}
               onChange={(e) => updateStatus(e.target.value as 'draft' | 'done' | 'sent')}
             >
@@ -147,8 +150,9 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
             <h2 className="text-base font-semibold">{uk.orderRooms}</h2>
             <button
               type="button"
-              className="min-h-touch rounded-md bg-sky-600 px-3 text-sm font-medium"
+              className="theme-btn-primary min-h-touch rounded-md px-3 text-sm font-medium"
               onClick={() => setShowTemplates((v) => !v)}
+              data-testid="add-room"
             >
               {uk.orderAddRoom}
             </button>
@@ -165,7 +169,7 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
           ) : (
             <ul className="space-y-2">
               {current.rooms.map((room) => {
-                const summary = summarizeRoom(room)
+                const summary = summarizeRoom(room, toleranceMm)
                 return (
                   <li key={room.id}>
                     <div className="flex items-stretch gap-2 rounded-lg border border-slate-700 bg-slate-900 p-2">

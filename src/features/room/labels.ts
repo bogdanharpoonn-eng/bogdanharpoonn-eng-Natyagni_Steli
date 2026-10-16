@@ -1,3 +1,6 @@
+import type { LengthUnit } from '@/stores/settingsStore'
+import { cmToMm } from '@/core/geometry'
+
 /** Vertex labels A, B, … Z, then AA… (MVP typically ≤ 20). */
 export function vertexLabels(count: number): string[] {
   const labels: string[] = []
@@ -25,7 +28,24 @@ export function parseCmInput(raw: string): number | null {
   return value
 }
 
+/** Parse user length in current display unit → millimetres. */
+export function parseLengthInput(raw: string, unit: LengthUnit): number | null {
+  const value = parseCmInput(raw)
+  if (value === null) return null
+  if (unit === 'mm') return Math.round(value)
+  return cmToMm(value)
+}
+
 export function formatCm(mm: number): string {
   const cm = mm / 10
   return (Math.round(cm * 10) / 10).toFixed(1)
+}
+
+export function formatLength(mm: number, unit: LengthUnit): string {
+  if (unit === 'mm') return String(Math.round(mm))
+  return formatCm(mm)
+}
+
+export function lengthUnitLabel(unit: LengthUnit): string {
+  return unit === 'mm' ? 'мм' : 'см'
 }
