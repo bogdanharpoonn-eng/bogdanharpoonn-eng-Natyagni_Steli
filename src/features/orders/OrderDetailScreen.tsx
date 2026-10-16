@@ -4,6 +4,7 @@ import { summarizeRoom } from '@/features/room/roomSummary'
 import type { RoomTemplateId } from '@/features/room/templates'
 import { useNavStore } from '@/stores/navStore'
 import { useOrdersStore } from '@/stores/ordersStore'
+import { ExportActions } from '@/features/export/ExportActions'
 import { TemplatePicker } from './TemplatePicker'
 import { uk } from '@/i18n/uk'
 
@@ -138,6 +139,8 @@ export function OrderDetailScreen({ orderId }: OrderDetailScreenProps) {
             </select>
           </label>
         </section>
+
+        <ExportActions order={current} />
 
         <section className="space-y-2">
           <div className="flex items-center justify-between gap-2">
