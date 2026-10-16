@@ -75,3 +75,10 @@
 | D039 | Lighthouse Performance ≥ 0.9 + перевірка manifest/SW у `dist` | У LH 12+ немає категорії PWA; артефакти PWA перевіряємо окремо |
 | D040 | Lazy screens + dynamic `jspdf`/`svg2pdf` + `manualChunks` | Довести Performance з ~0.89 до ≥0.9 на mobile |
 | D041 | Lighthouse CLI через `require.resolve` + відносний `--output-path` | Абсолютний шлях з кирилицею на Windows не писав report.json |
+
+## 2026-10-16 — Етап 8: DoD
+
+| ID | Рішення | Чому |
+| --- | --- | --- |
+| D042 | Звіт приймання в `docs/DOD.md` + e2e L-shape і autosave reload | Фінальна перевірка п. 9 ТЗ з доказами в CI/локально |
+| D043 | Install / airplane mode — ✅* (артефакти + інструкція), не емуляція пристрою | Playwright Chromium не замінює Safari/Android A2HS |

@@ -22,4 +22,13 @@ npm run lighthouse
 
 ## Етапи
 
-Див. `docs/ROADMAP.md` і `docs/DECISIONS.md`.
+Див. `docs/ROADMAP.md`, `docs/DECISIONS.md`. Приймання MVP: `docs/DOD.md`.
+
+```bash
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+# npm run preview -- --host 127.0.0.1 --port 4173
+npm run lighthouse
+```

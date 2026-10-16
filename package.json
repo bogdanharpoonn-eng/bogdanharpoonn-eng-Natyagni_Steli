@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "lighthouse": "node scripts/lighthouse-check.mjs"
+    "lighthouse": "node scripts/lighthouse-check.mjs",
+    "verify": "npm run lint && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "dexie": "^4.0.11",
