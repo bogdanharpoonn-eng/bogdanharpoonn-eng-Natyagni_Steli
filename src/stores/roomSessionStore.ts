@@ -9,26 +9,15 @@ import {
   type SuggestedDiagonal,
 } from '@/core/geometry'
 import {
-  createAutosave,
-  createEmptyOrder,
-  DexieOrderRepository,
+  getOrderAutosave,
+  getOrderRepository,
   roomToBuildInput,
-  type AutosaveController,
   type Order,
   type Room,
 } from '@/data'
-import { createPolygonRoom, resizeRoomCorners } from '@/features/room/createPolygonRoom'
+import { resizeRoomCorners } from '@/features/room/createPolygonRoom'
 import { parseCmInput } from '@/features/room/labels'
-
-const repo = new DexieOrderRepository()
-let autosave: AutosaveController | undefined
-
-function getAutosave(): AutosaveController {
-  if (!autosave) {
-    autosave = createAutosave(repo, { delayMs: 150 })
-  }
-  return autosave
-}
+import { applyTemplateToRoom, type RoomTemplateId } from '@/features/room/templates'
 
 function activeRoom(order: Order, roomId: string): Room | undefined {
   return order.rooms.find((r) => r.id === roomId)
@@ -65,12 +54,13 @@ export interface RoomSessionState {
   toleranceMm: number
   result: BuildRoomResult | null
   lastSuccess: BuildRoomSuccess | null
-  booting: boolean
-  bootError: string | null
-  boot: () => Promise<void>
+  loading: boolean
+  loadError: string | null
+  openRoom: (orderId: string, roomId: string) => Promise<void>
   getRoom: () => Room | null
   setRoomName: (name: string) => void
   setCornerCount: (n: number) => void
+  applyTemplate: (template: RoomTemplateId, customCorners?: number) => void
   setSideCm: (from: string, to: string, rawCm: string) => void
   setDiagonalCm: (from: string, to: string, rawCm: string, isControl?: boolean) => void
   toggleDiagonalControl: (from: string, to: string) => void
@@ -88,7 +78,7 @@ function applyRoomUpdate(roomUpdater: (room: Room) => Room): void {
   const nextOrder = replaceRoom(order, roomUpdater(room))
   const nextRoom = activeRoom(nextOrder, roomId)!
   const computed = recompute(nextRoom, toleranceMm, lastSuccess)
-  getAutosave().schedule(nextOrder)
+  getOrderAutosave().schedule(nextOrder)
   useRoomSessionStore.setState({
     order: nextOrder,
     result: computed.result,
@@ -102,28 +92,29 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
   toleranceMm: DEFAULT_TOLERANCE_MM,
   result: null,
   lastSuccess: null,
-  booting: true,
-  bootError: null,
+  loading: false,
+  loadError: null,
 
-  async boot() {
-    set({ booting: true, bootError: null })
+  async openRoom(orderId, roomId) {
+    set({ loading: true, loadError: null, order: null, roomId: null, result: null, lastSuccess: null })
     try {
-      const existing = await repo.listOrders()
-      let order = existing[0]
-      if (!order || order.rooms.length === 0) {
-        order = createEmptyOrder()
-        const room = createPolygonRoom(4, 'Приміщення 1')
-        order = { ...order, rooms: [room] }
-        await repo.saveOrder(order)
+      await getOrderAutosave().flush()
+      const order = await getOrderRepository().getOrder(orderId)
+      if (!order) {
+        set({ loading: false, loadError: 'Замовлення не знайдено' })
+        return
       }
-      const roomId = order.rooms[0]!.id
-      const room = order.rooms[0]!
+      const room = activeRoom(order, roomId)
+      if (!room) {
+        set({ loading: false, loadError: 'Приміщення не знайдено' })
+        return
+      }
       const { result, lastSuccess } = recompute(room, get().toleranceMm, null)
-      set({ order, roomId, result, lastSuccess, booting: false })
+      set({ order, roomId, result, lastSuccess, loading: false })
     } catch (error) {
       set({
-        booting: false,
-        bootError: error instanceof Error ? error.message : 'Помилка завантаження',
+        loading: false,
+        loadError: error instanceof Error ? error.message : 'Помилка завантаження',
       })
     }
   },
@@ -140,6 +131,10 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
 
   setCornerCount(n) {
     applyRoomUpdate((room) => resizeRoomCorners(room, n))
+  },
+
+  applyTemplate(template, customCorners = 5) {
+    applyRoomUpdate((room) => applyTemplateToRoom(room, template, customCorners))
   },
 
   setSideCm(from, to, rawCm) {
@@ -209,6 +204,6 @@ export const useRoomSessionStore = create<RoomSessionState>((set, get) => ({
   },
 
   async flushSave() {
-    await getAutosave().flush()
+    await getOrderAutosave().flush()
   },
 }))
